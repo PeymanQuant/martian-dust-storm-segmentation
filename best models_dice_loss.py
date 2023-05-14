@@ -1,17 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Mar  6 23:48:44 2023
-
-@author: dat
-"""
-
-
 
 import segmentation_models as sm
 import keras 
 from keras.metrics import MeanIoU
 from io import BytesIO
-
 
 import tensorflow as tf
 import os
@@ -26,7 +18,6 @@ from numpy import save
 from numpy import load
 import pandas as pd
 
-os.chdir("D:/peyman/Mars/207/iou loss/models/")
 
 np.random.seed(0)
 tf.random.set_seed(0)
@@ -34,17 +25,16 @@ tf.random.set_seed(0)
 
 RESIZED_SIZE = 512
 
-
 from keras.models import load_model
 
 #Set compile=False as we are not loading it for training, only for prediction.
-model1 = load_model('D:/peyman/Mars/207/iou loss/models/unet_2d_ResNet50_100epochs_G05_1024patchsize_IOULoss.h5', compile=False)
-model2 = load_model('D:/peyman/Mars/207/iou loss/models/unet_2d_DenseNet121_100epochs_G05_1024patchsize_IOULoss.h5', compile=False)
-model3 = load_model('D:/peyman/Mars/207/iou loss/models/att_unet_2d_DenseNet201_100epochs_G05_1024patchsize_IOULoss.h5', compile=False)
-model4 = load_model('D:/peyman/Mars/207/iou loss/models/unet_plus_2d_ResNet152_100epochs_G05_1024patchsize_IOULoss.h5', compile=False)
-model5 = load_model('D:/peyman/Mars/207/iou loss/models/unet_inceptionv3_100epochs_G05_1024patchsize_IOULoss.h5', compile=False)
-model6 = load_model('D:/peyman/Mars/207/iou loss/models/unet_inceptionv3_100epochs_G05G04_512patchsize_IOULoss.h5', compile=False)
-model7 = load_model('D:/peyman/Mars/207/iou loss/models/unet_vgg16_100epochs_G05G04_512patchsize_IOULoss.h5', compile=False)
+model1 = load_model('./iou loss/models/unet_2d_ResNet50_100epochs_G05_1024patchsize_IOULoss.h5', compile=False)
+model2 = load_model('./iou loss/models/unet_2d_DenseNet121_100epochs_G05_1024patchsize_IOULoss.h5', compile=False)
+model3 = load_model('./iou loss/models/att_unet_2d_DenseNet201_100epochs_G05_1024patchsize_IOULoss.h5', compile=False)
+model4 = load_model('./iou loss/models/unet_plus_2d_ResNet152_100epochs_G05_1024patchsize_IOULoss.h5', compile=False)
+model5 = load_model('./iou loss/models/unet_inceptionv3_100epochs_G05_1024patchsize_IOULoss.h5', compile=False)
+model6 = load_model('./iou loss/models/unet_inceptionv3_100epochs_G05G04_512patchsize_IOULoss.h5', compile=False)
+model7 = load_model('./iou loss/models/unet_vgg16_100epochs_G05G04_512patchsize_IOULoss.h5', compile=False)
 
 
 ##############################################################
@@ -59,60 +49,39 @@ BACKBONE7 = 'vgg16'
 preprocess_input7 = sm.get_preprocessing(BACKBONE7)
 
 
+test_image_path = './dust_1024_patch_size/test_img/'
+test_mask_path = './dust_1024_patch_size/test_mask/'
+test_color_path = "./dust_1024_patch_size/test_mask_color_coded/"
 
-
-
-test_image_path = 'D:/peyman/Mars/207/dust_1024_patch_size/test_img/'
-test_mask_path = 'D:/peyman/Mars/207/dust_1024_patch_size/test_mask/'
-test_color_path = "D:/peyman/Mars/207/dust_1024_patch_size/test_mask_color_coded/"
-
-test_image_dataset = []  #Many ways to handle data, you can use pandas. Here, we are using a list format.  
-test_mask_dataset = []  #Place holders to define add labels. We will add 0 to all parasitized images and 1 to uninfected.
+test_image_dataset = []  
+test_mask_dataset = [] 
 test_color_dataset = []
 
 images = os.listdir(test_image_path)
-for i, image_name in enumerate(images):    #Remember enumerate method adds a counter and returns the enumerate object
-    #print(image_directory+image_name)
+for i, image_name in enumerate(images):   
     image = cv2.imread(test_image_path+image_name)
     image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
-    #image = cv2.resize(image, (RESIZED_SIZE, RESIZED_SIZE))
     image = Image.fromarray(image)
-    #image = image.resize((SIZE, SIZE))
     test_image_dataset.append(np.array(image))
 
-#Iterate through all images in Uninfected folder, resize to 64 x 64
-#Then save into the same numpy array 'dataset' but with label 1
 
 masks = os.listdir(test_mask_path)
 for i, image_name in enumerate(masks):
     image = cv2.imread(test_mask_path+image_name, 0)
-    #image = cv2.resize(image, (RESIZED_SIZE, RESIZED_SIZE), interpolation=cv2.INTER_NEAREST)
     image = Image.fromarray(image)
-    #image = image.resize((SIZE, SIZE))
     test_mask_dataset.append(np.array(image))
     
     
 images = os.listdir(test_color_path)
-for i, image_name in enumerate(images):    #Remember enumerate method adds a counter and returns the enumerate object
-    #print(image_directory+image_name)
+for i, image_name in enumerate(images):   
     image = cv2.imread(test_color_path+image_name)
     image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
-    #image = cv2.resize(image, (RESIZED_SIZE, RESIZED_SIZE))
     image = Image.fromarray(image)
-    #image = image.resize((SIZE, SIZE))
     test_color_dataset.append(np.array(image))
     
-
-#Normalize images
-#image_dataset = np.expand_dims(normalize(np.array(image_dataset), axis=1),4)
-#D not normalize masks, just rescale to 0 to 1.
-#mask_dataset = np.expand_dims((np.array(mask_dataset)),3) /255.
-
-
 test_image_dataset = np.array(test_image_dataset)
 test_mask_dataset = np.array(test_mask_dataset)
 test_color_dataset = np.array(test_color_dataset)
-#mask_dataset = np.array(mask_dataset) /255.
 
 def calculate_iou(pred_mask, gt_mask):
     if gt_mask is None:
@@ -162,25 +131,16 @@ for model_idx, model in enumerate(models):
     iou_df[f'model{model_idx+1}'] = iou_values
 
 
-
-
-
-
-test_image_dataset_5 = []  #Many ways to handle data, you can use pandas. Here, we are using a list format.  
-test_mask_dataset_5 = []  #Place holders to define add labels. We will add 0 to all parasitized images and 1 to uninfected.
+test_image_dataset_5 = []  
+test_mask_dataset_5 = []
 
 images_5 = os.listdir(test_image_path)
-for i, image_name in enumerate(images_5):    #Remember enumerate method adds a counter and returns the enumerate object
-    #print(image_directory+image_name)
+for i, image_name in enumerate(images_5):   
     image = cv2.imread(test_image_path+image_name)
     image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
-    #image = cv2.resize(image, (RESIZED_SIZE, RESIZED_SIZE))
     image = Image.fromarray(image)
-    #image = image.resize((SIZE, SIZE))
     test_image_dataset_5.append(np.array(image))
 
-#Iterate through all images in Uninfected folder, resize to 64 x 64
-#Then save into the same numpy array 'dataset' but with label 1
 
 masks_5 = os.listdir(test_mask_path)
 for i, image_name in enumerate(masks_5):
@@ -191,15 +151,8 @@ for i, image_name in enumerate(masks_5):
     test_mask_dataset_5.append(np.array(image))
     
 
-#Normalize images
-#image_dataset = np.expand_dims(normalize(np.array(image_dataset), axis=1),4)
-#D not normalize masks, just rescale to 0 to 1.
-#mask_dataset = np.expand_dims((np.array(mask_dataset)),3) /255.
-
-
 test_image_dataset_5 = np.array(test_image_dataset_5)
 test_mask_dataset_5 = np.array(test_mask_dataset_5)
-#mask_dataset = np.array(mask_dataset) /255.
 
 def calculate_iou(pred_mask, gt_mask):
     if gt_mask is None:
@@ -249,28 +202,16 @@ for model_idx, model in enumerate(models):
     iou_df_5[f'model{model_idx+1}'] = iou_values
 
 
-
-
-
-
-
-
-
-test_image_dataset_67 = []  #Many ways to handle data, you can use pandas. Here, we are using a list format.  
-test_mask_dataset_67 = []  #Place holders to define add labels. We will add 0 to all parasitized images and 1 to uninfected.
+test_image_dataset_67 = []  
+test_mask_dataset_67 = [] 
 
 images_67 = os.listdir(test_image_path)
-for i, image_name in enumerate(images_67):    #Remember enumerate method adds a counter and returns the enumerate object
-    #print(image_directory+image_name)
+for i, image_name in enumerate(images_67):   
     image = cv2.imread(test_image_path+image_name)
     image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
     image = cv2.resize(image, (RESIZED_SIZE, RESIZED_SIZE))
     image = Image.fromarray(image)
-    #image = image.resize((SIZE, SIZE))
     test_image_dataset_67.append(np.array(image))
-
-#Iterate through all images in Uninfected folder, resize to 64 x 64
-#Then save into the same numpy array 'dataset' but with label 1
 
 masks_67 = os.listdir(test_mask_path)
 for i, image_name in enumerate(masks_67):
@@ -280,16 +221,8 @@ for i, image_name in enumerate(masks_67):
     #image = image.resize((SIZE, SIZE))
     test_mask_dataset_67.append(np.array(image))
     
-
-#Normalize images
-#image_dataset = np.expand_dims(normalize(np.array(image_dataset), axis=1),4)
-#D not normalize masks, just rescale to 0 to 1.
-#mask_dataset = np.expand_dims((np.array(mask_dataset)),3) /255.
-
-
 test_image_dataset_67 = np.array(test_image_dataset_67)
 test_mask_dataset_67 = np.array(test_mask_dataset_67)
-#mask_dataset = np.array(mask_dataset) /255.
 
 def calculate_iou(pred_mask, gt_mask):
     if gt_mask is None:
@@ -339,21 +272,14 @@ for model_idx, model in enumerate(models):
     iou_df_67[f'model{model_idx+1}'] = iou_values
 
 
-
 iou_df = iou_df.rename(columns={'model1': 'unet_2d_ResNet50_1024ps', 'model2': 'unet_2d_DenseNet121_1024ps', 
                                 'model3': 'att_unet_2d_DenseNet201_1024ps', 'model4': 'unet_plus_2d_ResNet152_1024ps'})
 
 
-
 iou_df_5 = iou_df_5.rename(columns={'model1': 'unet_inceptionv3_1024ps'})
-
 iou_df_67 = iou_df_67.rename(columns={'model1': 'unet_inceptionv3_512ps', 'model2': 'unet_vgg16_512ps'})
-
-
 iou_df_total = pd.concat([iou_df, iou_df_5, iou_df_67], axis=1)
-
-iou_df_total.to_csv('D:/peyman/Mars/207/iou loss/iou_of_test_images.csv', index=False)
-
+iou_df_total.to_csv('./iou loss/iou_of_test_images.csv', index=False)
 
 
 cnt = 0
@@ -366,17 +292,16 @@ test_labels = ["25_03", "25_10", "25_11", "25_12", "25_13", "26_00", "26_01",
 
 for test_lbl in test_labels:
     
-    color_mask = cv2.imread("D:/peyman/Mars/207/dust_1024_patch_size/test_mask_color_coded/image_G05_day" 
+    color_mask = cv2.imread("./dust_1024_patch_size/test_mask_color_coded/image_G05_day" 
                             + test_lbl + ".png.png")
     color_mask = cv2.cvtColor(color_mask
                               ,cv2.COLOR_BGR2RGB)
-    test_img = cv2.imread("D:/peyman/Mars/207/dust_1024_patch_size/test_img/image_G05_day" 
+    test_img = cv2.imread("./dust_1024_patch_size/test_img/image_G05_day" 
                           + test_lbl + ".png")
     test_img = cv2.cvtColor(test_img,cv2.COLOR_BGR2RGB)
     test_img_resized = cv2.resize(test_img, (RESIZED_SIZE, RESIZED_SIZE))
 
-    #ground_truth=y_test[test_img_number]
-    ground_truth=cv2.imread("D:/peyman/Mars/207/dust_1024_patch_size/test_mask/image_G05_day" 
+    ground_truth=cv2.imread("./dust_1024_patch_size/test_mask/image_G05_day" 
                           + test_lbl + ".png", 0)
     
     ground_truth_resized = cv2.resize(ground_truth, (RESIZED_SIZE, RESIZED_SIZE), interpolation=cv2.INTER_NEAREST)
@@ -409,17 +334,6 @@ for test_lbl in test_labels:
     test_img_input7 = preprocess_input7(test_img_resized)
     test_pred7 = model7.predict(test_img_input7)
     test_prediction7 = np.argmax(test_pred7, axis=3)[0,:,:]
-
-
-
-    #prediction1 = (model1.predict(test_img_input1)[0,:,:,0] > 0.5).astype(np.uint8)
-    # prediction2 = (model2.predict(test_img_input2)[0,:,:,0] > 0.5).astype(np.uint8)
-    # prediction3 = (model3.predict(test_img_input3)[0,:,:,0] > 0.5).astype(np.uint8)
-    # prediction4 = (model4.predict(test_img_input4)[0,:,:,0] > 0.5).astype(np.uint8)
-    # prediction5 = (model5.predict(test_img_input5)[0,:,:,0] > 0.5).astype(np.uint8)
-    # prediction6 = (model6.predict(test_img_input6)[0,:,:,0] > 0.5).astype(np.uint8)
-    # prediction7 = (model7.predict(test_img_input7)[0,:,:,0] > 0.5).astype(np.uint8)
-
 
 
     plt.figure(figsize=(40, 5))
@@ -478,114 +392,9 @@ for test_lbl in test_labels:
     plt.text(0.5, -0.1, str(round(iou_df_67["unet_vgg16_512ps"][cnt], 3)), ha='center', va='center', transform=plt.gca().transAxes, fontsize=35)
     plt.xticks([])  # remove x-axis values
     #plt.yticks([])  # remove y-axis values
-    plt.savefig("D:/peyman/Mars/207/iou loss/" + test_lbl + ".png")
+    plt.savefig("./iou loss/" + test_lbl + ".png")
     plt.show()
     cnt += 1
-
-
-
-cnt = 0
-
-
-for test_lbl in test_labels:
-    
-    color_mask = cv2.imread("D:/peyman/Mars/207/dust_1024_patch_size/test_mask_color_coded/image_G05_day" 
-                            + test_lbl + ".png.png")
-    color_mask = cv2.cvtColor(color_mask
-                              ,cv2.COLOR_BGR2RGB)
-    test_img = cv2.imread("D:/peyman/Mars/207/dust_1024_patch_size/test_img/image_G05_day" 
-                          + test_lbl + ".png")
-    test_img = cv2.cvtColor(test_img,cv2.COLOR_BGR2RGB)
-    test_img_resized = cv2.resize(test_img, (RESIZED_SIZE, RESIZED_SIZE))
-
-    #ground_truth=y_test[test_img_number]
-    ground_truth=cv2.imread("D:/peyman/Mars/207/dust_1024_patch_size/test_mask/image_G05_day" 
-                          + test_lbl + ".png", 0)
-    
-    ground_truth_resized = cv2.resize(ground_truth, (RESIZED_SIZE, RESIZED_SIZE), interpolation=cv2.INTER_NEAREST)
-
-    test_img=np.expand_dims(test_img, 0)
-    
-    test_img_resized=np.expand_dims(test_img_resized, 0)
-
-
-    test_pred1 = model1.predict(test_img)
-    test_prediction1 = np.argmax(test_pred1, axis=3)[0,:,:]
-
-    test_pred2 = model2.predict(test_img)
-    test_prediction2 = np.argmax(test_pred2, axis=3)[0,:,:]
-
-    test_pred3 = model3.predict(test_img)
-    test_prediction3 = np.argmax(test_pred3, axis=3)[0,:,:]
-
-    test_pred4 = model4.predict(test_img)
-    test_prediction4 = np.argmax(test_pred4, axis=3)[0,:,:]
-
-    test_img_input5 = preprocess_input5(test_img)
-    test_pred5 = model5.predict(test_img_input5)
-    test_prediction5 = np.argmax(test_pred5, axis=3)[0,:,:]
-
-
-    #prediction1 = (model1.predict(test_img_input1)[0,:,:,0] > 0.5).astype(np.uint8)
-    # prediction2 = (model2.predict(test_img_input2)[0,:,:,0] > 0.5).astype(np.uint8)
-    # prediction3 = (model3.predict(test_img_input3)[0,:,:,0] > 0.5).astype(np.uint8)
-    # prediction4 = (model4.predict(test_img_input4)[0,:,:,0] > 0.5).astype(np.uint8)
-    # prediction5 = (model5.predict(test_img_input5)[0,:,:,0] > 0.5).astype(np.uint8)
-    # prediction6 = (model6.predict(test_img_input6)[0,:,:,0] > 0.5).astype(np.uint8)
-    # prediction7 = (model7.predict(test_img_input7)[0,:,:,0] > 0.5).astype(np.uint8)
-
-
-
-    plt.figure(figsize=(40, 5))
-    plt.subplot(1, 8, 1)
-    #plt.title('Testing Image')
-    plt.imshow(test_img.squeeze())
-    plt.subplot(1, 8, 2)
-    #plt.title('Testing Label')
-    plt.imshow(ground_truth, cmap='gray')
-    plt.xticks([])  # remove x-axis values
-    plt.yticks([])  # remove y-axis values
-    plt.subplot(1, 8, 3)
-    #plt.title('Testing Label color coded')
-    plt.imshow(color_mask.squeeze())
-    plt.xticks([])  # remove x-axis values
-    plt.yticks([])  # remove y-axis values
-    plt.subplot(1, 8, 4)
-    #plt.title('unet_2d_ResNet50_1024ps')
-    plt.imshow(test_prediction1)
-    plt.text(0.5, -0.15, "IOU = " + str(round(iou_df["model1"][cnt], 3)), ha='center', va='center', transform=plt.gca().transAxes, fontsize=35)
-    plt.xticks([])  # remove x-axis values
-    plt.yticks([])  # remove y-axis values
-    plt.subplot(1, 8, 5)
-    #plt.title('unet_2d_DenseNet121_1024ps')
-    plt.imshow(test_prediction2)
-    plt.text(0.5, -0.15, "IOU = " + str(round(iou_df["model2"][cnt], 3)), ha='center', va='center', transform=plt.gca().transAxes, fontsize=35)
-    plt.xticks([])  # remove x-axis values
-    plt.yticks([])  # remove y-axis values
-    plt.subplot(1, 8, 6)
-    #plt.title('att_unet_2d_DenseNet201_1024ps')
-    plt.imshow(test_prediction3)
-    plt.text(0.5, -0.15, "IOU = " + str(round(iou_df["model3"][cnt], 3)), ha='center', va='center', transform=plt.gca().transAxes, fontsize=35)
-    plt.xticks([])  # remove x-axis values
-    plt.yticks([])  # remove y-axis values
-    plt.subplot(1, 8, 7)
-    #plt.title('unet_plus_2d_ResNet152_1024ps')
-    plt.imshow(test_prediction4)
-    plt.text(0.5, -0.15, "IOU = " + str(round(iou_df["model4"][cnt], 3)), ha='center', va='center', transform=plt.gca().transAxes, fontsize=35)
-    plt.xticks([])  # remove x-axis values
-    plt.yticks([])  # remove y-axis values
-    plt.subplot(1, 8, 8)
-    #plt.title('unet_inceptionv3_1024ps')
-    plt.imshow(test_prediction5)
-    plt.text(0.5, -0.15, "IOU = " + str(round(iou_df_5["model1"][cnt], 3)), ha='center', va='center', transform=plt.gca().transAxes, fontsize=35)
-    plt.xticks([])  # remove x-axis values
-    plt.yticks([])  # remove y-axis values
-    plt.savefig("D:/peyman/Mars/207/poster/" + test_lbl + ".png")
-    plt.show()
-    cnt += 1
-
-
-
 
 models = [model1, model2, model3, model4, model5, model6, model7]
 preprocess_functions = [preprocess_input5, preprocess_input6, preprocess_input7]
@@ -631,11 +440,11 @@ def prediction(model_idx, image, patch_size):
 
     
     
-image_path = "D:/peyman/Mars/207/dust_1024_G05_26_27_28_29/images/"
-mask_path = "D:/peyman/Mars/207/dust_1024_G05_26_27_28_29/masks/"
-colored_mask_path = "D:/peyman/Mars/207/dust_1024_G05_26_27_28_29/color coded masks/"
+image_path = "./dust_1024_G05_26_27_28_29/images/"
+mask_path = "./dust_1024_G05_26_27_28_29/masks/"
+colored_mask_path = "./dust_1024_G05_26_27_28_29/color coded masks/"
 
-save_path = "D:/peyman/Mars/207/dust_1024_G05_26_27_28_29/predictions/"
+save_path = "./dust_1024_G05_26_27_28_29/predictions/"
 
 for img in next(os.walk(image_path))[2]:
     
@@ -730,17 +539,6 @@ for img in next(os.walk(image_path))[2]:
     segmented_image7 = np.array(segmented_image7)
     segmented_image7 = np.where(segmented_image7 == 1, 0, 1)
     iou7 = calculate_iou(segmented_image7, gt_mask_resized)
-    
-    
-    
-
-    #prediction1 = (model1.predict(test_img_input1)[0,:,:,0] > 0.5).astype(np.uint8)
-    # prediction2 = (model2.predict(test_img_input2)[0,:,:,0] > 0.5).astype(np.uint8)
-    # prediction3 = (model3.predict(test_img_input3)[0,:,:,0] > 0.5).astype(np.uint8)
-    # prediction4 = (model4.predict(test_img_input4)[0,:,:,0] > 0.5).astype(np.uint8)
-    # prediction5 = (model5.predict(test_img_input5)[0,:,:,0] > 0.5).astype(np.uint8)
-    # prediction6 = (model6.predict(test_img_input6)[0,:,:,0] > 0.5).astype(np.uint8)
-    # prediction7 = (model7.predict(test_img_input7)[0,:,:,0] > 0.5).astype(np.uint8)
     
     
     plt.figure(figsize=(40, 5))
