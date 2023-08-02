@@ -16,8 +16,8 @@ import pandas as pd
 np.random.seed(0)
 tf.random.set_seed(0)
 
-image_directory = './attention unet/dust_1024_patch_size/img_patches/'
-mask_directory = './attention unet/dust_1024_patch_size/mask_patches/'
+image_directory = './dust_1024_patch_size/img_patches/'
+mask_directory = './dust_1024_patch_size/mask_patches/'
 
 image_dataset = [] 
 mask_dataset = []
